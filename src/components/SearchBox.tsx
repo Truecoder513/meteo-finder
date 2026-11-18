@@ -3,7 +3,8 @@
 import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDebouncer } from "@/app/hooks/useDebouncer";
-import { SEARCH_MIN_CHARS, searchLocalites } from "@/app/services";
+import { SEARCH_MIN_CHARS, isAbortError, searchLocalites } from "@/app/services";
+import { ErrorState } from "@/components/ErrorState";
 import { SearchResultsSkeleton } from "@/components/skeletons/WeatherSkeletons";
 import { localiteSlug } from "@/lib/slug";
 import type { Localite } from "@/types/open-meteo";
@@ -20,6 +21,7 @@ export function SearchBox({ compact = false }: { compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [search, setSearch] = useState<SearchState>({ query: "", status: "idle", results: [] });
+  const [attempt, setAttempt] = useState(0); // incrémenté par « Réessayer »
 
   // La requête ne part que quand l'utilisateur a fini de taper.
   const debouncedQuery = useDebouncer(query.trim(), DEBOUNCE_MS);
@@ -32,11 +34,12 @@ export function SearchBox({ compact = false }: { compact?: boolean }) {
     searchLocalites(debouncedQuery, { signal: controller.signal })
       .then((results) => setSearch({ query: debouncedQuery, status: "success", results }))
       .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (isAbortError(err)) return; // annulée par une nouvelle saisie : pas une erreur
+        // Réseau coupé, API en erreur ou délai dépassé.
         setSearch({ query: debouncedQuery, status: "error", results: [] });
       });
     return () => controller.abort();
-  }, [debouncedQuery, tooShort]);
+  }, [debouncedQuery, tooShort, attempt]);
 
   // État déduit : tant que la réponse ne correspond pas à la saisie, on est « en cours ».
   const pending =
@@ -48,7 +51,13 @@ export function SearchBox({ compact = false }: { compact?: boolean }) {
       ? search.status
       : "idle";
   const results = status === "success" ? search.results : [];
-  const showList = open && status !== "idle";
+  const showList = open && (status === "loading" || status === "success");
+
+  function retry() {
+    setSearch({ query: "", status: "idle", results: [] }); // repasse en chargement
+    setAttempt((n) => n + 1);
+    setOpen(true);
+  }
 
   function select(l: Localite) {
     setOpen(false);
@@ -74,9 +83,7 @@ export function SearchBox({ compact = false }: { compact?: boolean }) {
   const statusMessage =
     status === "loading"
       ? "Recherche en cours…"
-      : status === "error"
-        ? "La recherche a échoué. Vérifiez votre connexion et réessayez."
-        : status === "success" && results.length === 0
+      : status === "success" && results.length === 0
           ? "Aucune localité trouvée au Bénin."
           : status === "success"
             ? `${results.length} localité${results.length > 1 ? "s" : ""} trouvée${results.length > 1 ? "s" : ""}. Utilisez les flèches pour naviguer.`
@@ -144,9 +151,7 @@ export function SearchBox({ compact = false }: { compact?: boolean }) {
           {status === "loading" ? (
             <SearchResultsSkeleton />
           ) : results.length === 0 ? (
-            <li className={`px-4 py-3 text-sm ${status === "error" ? "text-alert" : "text-muted"}`}>
-              {statusMessage}
-            </li>
+            <li className="px-4 py-3 text-sm text-muted">{statusMessage}</li>
           ) : (
             results.map((l, i) => (
               <li
@@ -169,6 +174,18 @@ export function SearchBox({ compact = false }: { compact?: boolean }) {
             ))
           )}
         </ul>
+      )}
+
+      {/* Erreur : reste affichée hors de la liste pour que « Réessayer » soit atteignable au clavier */}
+      {status === "error" && (
+        <div className="absolute z-[1000] mt-1 w-full bg-surface text-left shadow-md">
+          <ErrorState
+            compact
+            title="Recherche impossible"
+            message="Le service de recherche ne répond pas. Vérifiez votre connexion puis réessayez."
+            onRetry={retry}
+          />
+        </div>
       )}
     </div>
   );

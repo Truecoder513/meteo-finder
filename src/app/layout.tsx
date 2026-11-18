@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Footer } from "@/components/Footer";
-import { env } from "@/lib/env";
+import { serverEnv } from "@/lib/env.server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(env.siteUrl),
+  metadataBase: new URL(serverEnv.siteUrl),
   title: {
     default: "Météo Bénin — météo et prévisions de toutes les localités",
     template: "%s | Météo Bénin",

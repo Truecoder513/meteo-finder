@@ -44,8 +44,22 @@ export class OpenMeteoError extends Error {
 
 type RequestOptions = { signal?: AbortSignal };
 
+/** Au-delà de ce délai, la requête est abandonnée (évite un chargement infini). */
+const REQUEST_TIMEOUT_MS = 10_000;
+
+/** Combine le signal d'annulation de l'appelant et le délai maximum. */
+function withTimeout(signal?: AbortSignal): AbortSignal {
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
+
+/** true si l'erreur vient d'une annulation volontaire (nouvelle saisie), pas d'une panne. */
+export function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException && err.name === "AbortError";
+}
+
 async function getJson<T>(url: string, { signal }: RequestOptions = {}): Promise<T> {
-  const res = await fetch(url, { signal, headers: { Accept: "application/json" } });
+  const res = await fetch(url, { signal: withTimeout(signal), headers: { Accept: "application/json" } });
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as OpenMeteoErrorResponse | null;
     throw new OpenMeteoError(res.status, body?.reason ?? res.statusText);

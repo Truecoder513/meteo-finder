@@ -141,6 +141,21 @@ L'accessibilité améliore aussi le **SEO**, grâce à une structure sémantique
 - Si une nouvelle saisie arrive pendant une requête, celle-ci est **annulée** (`AbortController`).
 - Pendant le chargement, la liste affiche un **squelette**.
 
+### Erreurs (API injoignable ou en erreur)
+
+Une erreur de l'API ou du réseau n'affiche **jamais une page blanche ni un message technique**. L'utilisateur voit un message clair accompagné d'un bouton **« Réessayer »** (composant [`ErrorState`](src/components/ErrorState.tsx)).
+
+| Où | Comportement |
+|---|---|
+| Recherche | Encadré « Recherche impossible » sous le champ avec « Réessayer ». Il reste visible pour être atteignable au clavier |
+| Pages localité et « ma position » | [`src/app/meteo/error.tsx`](src/app/meteo/error.tsx) : l'en-tête et la recherche restent affichés, avec « Réessayer » et « Retour à l'accueil » |
+| Reste du site | [`src/app/error.tsx`](src/app/error.tsx), et en dernier recours [`global-error.tsx`](src/app/global-error.tsx) |
+| Pages pré-rendues (grandes villes) | Si l'API tombe, la dernière version valide reste affichée |
+
+Les requêtes sont abandonnées après **10 secondes** pour ne pas laisser un chargement infini. Le détail technique de l'erreur n'est écrit que dans les journaux du serveur.
+
+> Le build pré-rend les grandes villes : si Open-Meteo est indisponible **pendant le build**, celui-ci échoue. Il suffit de relancer le build.
+
 ### Vigilance pluie
 
 Un jour est signalé **« Vigilance pluie »** si le **cumul de pluie prévu atteint 20 mm** ou si la **probabilité de pluie atteint 80 %**. La règle et ses seuils sont dans [`src/lib/rain-vigilance.ts`](src/lib/rain-vigilance.ts).
