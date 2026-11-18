@@ -11,6 +11,37 @@ const btn =
 const btnPrimary = `${btn} bg-foreground text-white hover:bg-foreground/85`;
 const btnSecondary = `${btn} border border-border-strong bg-surface text-foreground hover:bg-subtle`;
 
+// Messages par cause, avec la marche à suivre (jamais de détail technique).
+const GEO_ERRORS = {
+  denied: {
+    title: "L’accès à votre position est refusé.",
+    steps: [
+      "Cliquez sur l’icône à gauche de l’adresse du site, autorisez « Position », puis réessayez.",
+    ],
+  },
+  unavailable: {
+    title: "Votre appareil n’a pas pu fournir votre position.",
+    steps: [
+      "Vérifiez que la localisation est activée sur votre appareil.",
+      "Sur Mac : Réglages Système › Confidentialité et sécurité › Service de localisation, puis autorisez votre navigateur.",
+      "Sur Windows : Paramètres › Confidentialité › Localisation.",
+      "Sur téléphone : activez la localisation (GPS) dans les réglages rapides.",
+    ],
+  },
+  timeout: {
+    title: "La localisation a pris trop de temps.",
+    steps: ["Activez le Wi-Fi ou placez-vous près d’une fenêtre, puis réessayez."],
+  },
+  unsupported: {
+    title: "Votre navigateur ne permet pas la géolocalisation.",
+    steps: ["Essayez avec un navigateur récent (Chrome, Firefox, Safari, Edge)."],
+  },
+  insecure: {
+    title: "La géolocalisation nécessite une connexion sécurisée (HTTPS).",
+    steps: ["Ouvrez le site via son adresse https://."],
+  },
+} as const;
+
 function PinIcon({ spinning = false }: { spinning?: boolean }) {
   return (
     <svg
@@ -43,7 +74,7 @@ export function GeolocateButton() {
 
   // Déplace le focus vers le panneau quand il apparaît (clavier / lecteurs d'écran).
   useEffect(() => {
-    if (status === "prompt" || status === "denied" || status === "unavailable" || status === "insecure") {
+    if (status !== "idle" && status !== "locating" && status !== "success") {
       panelRef.current?.focus();
     }
   }, [status]);
@@ -76,14 +107,14 @@ export function GeolocateButton() {
     );
   }
 
-  if (status === "denied" || status === "unavailable" || status === "insecure") {
-    const message = {
-      denied:
-        "L’accès à la position a été refusé. Pour l’activer, cliquez sur l’icône à gauche de l’adresse du site, autorisez « Position », puis réessayez. Vous pouvez aussi rechercher votre localité.",
-      unavailable:
-        "Impossible de déterminer votre position pour le moment. Réessayez ou recherchez votre localité.",
-      insecure: "La géolocalisation nécessite une connexion sécurisée (HTTPS).",
-    }[status];
+  if (
+    status === "denied" ||
+    status === "unavailable" ||
+    status === "timeout" ||
+    status === "unsupported" ||
+    status === "insecure"
+  ) {
+    const { title, steps } = GEO_ERRORS[status];
     return (
       <div
         ref={panelRef}
@@ -91,7 +122,13 @@ export function GeolocateButton() {
         role="alert"
         className="w-full rounded-lg border border-alert bg-surface p-5 text-left outline-none"
       >
-        <p className="text-sm">{message}</p>
+        <p className="font-semibold">{title}</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
+          {steps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+          <li>Vous pouvez aussi rechercher votre localité par son nom.</li>
+        </ul>
         <button type="button" onClick={check} className={`${btnSecondary} mt-3`}>
           Réessayer
         </button>
@@ -120,7 +157,7 @@ export function GeolocateButton() {
       className={`${btnSecondary} h-12 w-full`}
     >
       <PinIcon spinning={busy} />
-      {busy ? "Localisation…" : "Utiliser ma position"}
+      {busy ? "Localisation… (quelques secondes)" : "Utiliser ma position"}
     </button>
   );
 }
