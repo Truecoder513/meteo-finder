@@ -60,16 +60,25 @@ Toute la configuration est dans `.env.local`, qui n'est pas commité. Le modèle
 | `NEXT_PUBLIC_GEOCODING_API_URL` | API de recherche de localités | `https://geocoding-api.open-meteo.com/v1` |
 | `NEXT_PUBLIC_FORECAST_API_URL` | API de prévisions | `https://api.open-meteo.com/v1/forecast` |
 | `NEXT_PUBLIC_OSM_TILE_URL` | Modèle d'URL des tuiles de carte | `https://tile.openstreetmap.org/{z}/{x}/{y}.png` |
-| `NEXT_PUBLIC_SITE_URL` | URL publique du site (URL canoniques, SEO) | `http://localhost:3000` |
+| `SITE_URL` | URL publique du site (URL canoniques, SEO). **Serveur uniquement.** Optionnelle sur Vercel | `http://localhost:3000` |
 
-**Pourquoi le préfixe `NEXT_PUBLIC_` ?** La recherche s'exécute dans le navigateur, et la carte aussi. Ces valeurs doivent donc être incluses dans le code envoyé au client. Conséquences :
+**Pourquoi le préfixe `NEXT_PUBLIC_` sur trois variables ?** La recherche s'exécute dans le navigateur, et la carte aussi. Ces trois valeurs doivent donc être incluses dans le code envoyé au client. Conséquences :
 
 - elles sont **publiques** : n'y mettez jamais de secret ;
 - elles sont **figées au moment du `pnpm build`** : il faut rebuilder après chaque modification.
 
+**`SITE_URL` n'a pas de préfixe** : elle ne sert qu'au serveur (`metadataBase`). Elle est lue dans [`src/lib/env.server.ts`](src/lib/env.server.ts), qui importe `server-only` : le build échoue si ce module est importé côté client. Si elle n'est pas définie sur Vercel, le domaine de production fourni par Vercel (`VERCEL_PROJECT_PRODUCTION_URL`) est utilisé, et `http://localhost:3000` en local.
+
+### Déploiement sur Vercel
+
+Dans *Settings → Environment Variables* :
+
+- déclarez les trois variables `NEXT_PUBLIC_*` comme **non sensibles** (type *Config* / *Plain*). Ce sont des URL publiques, visibles de toute façon dans le navigateur. Si vous les marquez *Sensitive*, Vercel affiche l'avertissement « Remove the public framework prefix to keep this value private… » ;
+- `SITE_URL` est facultative. Définissez-la si vous utilisez un domaine personnalisé.
+
 ### Validation
 
-Les variables sont lues et validées à un seul endroit : [`src/lib/env.ts`](src/lib/env.ts). Le reste du code importe l'objet `env`, typé, au lieu de lire `process.env` directement.
+Les variables sont lues et validées à deux endroits : [`src/lib/env.ts`](src/lib/env.ts) pour les variables publiques et [`src/lib/env.server.ts`](src/lib/env.server.ts) pour celles du serveur. Les règles communes sont dans [`env-validation.ts`](src/lib/env-validation.ts). Le reste du code importe les objets `env` / `serverEnv`, typés, au lieu de lire `process.env` directement.
 
 Chaque variable est vérifiée au démarrage (`pnpm dev`) et au build :
 
@@ -207,7 +216,7 @@ Règles du projet :
 
 - **Aucune requête n'est définie dans un composant** : elles passent toutes par `src/app/services`.
 - Les types des réponses d'API sont dans `src/types`.
-- La configuration passe par `.env.local`, validé dans `src/lib/env.ts`.
+- La configuration passe par `.env.local`, validé dans `src/lib/env.ts` (public) et `src/lib/env.server.ts` (serveur).
 - Pas de données fictives : uniquement des données réelles d'Open-Meteo.
 
 ## Stack
