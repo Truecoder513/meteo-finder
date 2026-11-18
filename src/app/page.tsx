@@ -1,4 +1,5 @@
 import { CityCard } from "@/components/CityCard";
+import { FavoritesList } from "@/components/favorites/FavoritesList";
 import { GeolocateButton } from "@/components/GeolocateButton";
 import { Header } from "@/components/Header";
 import { SearchBox } from "@/components/SearchBox";
@@ -22,6 +23,8 @@ export default function Home() {
             <GeolocateButton />
           </div>
         </section>
+
+        <FavoritesList />
 
         <section aria-labelledby="villes-title" className="pb-20">
           <h2 id="villes-title" className="mb-2 text-sm font-medium text-muted">

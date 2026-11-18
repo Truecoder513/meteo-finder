@@ -2,8 +2,11 @@
 
 Service web qui affiche la **météo actuelle** et les **prévisions sur 7 jours** de n'importe quelle localité du **Bénin** : villes, communes et villages.
 
+**🌐 Démo en ligne : <https://meteo-finder.vercel.app/>**
+
 - Recherche d'une localité par son nom, avec suggestions pendant la frappe.
 - Bouton « Utiliser ma position » (géolocalisation, avec demande d'autorisation).
+- Localités **favorites**, conservées dans le navigateur.
 - Carte OpenStreetMap centrée sur la localité.
 - Une page par localité, indexable par les moteurs de recherche (`/meteo/cotonou-2394819`).
 - **Bénin uniquement** : aucune localité ni position d'un autre pays n'est acceptée.
@@ -150,6 +153,17 @@ L'accessibilité améliore aussi le **SEO**, grâce à une structure sémantique
 - Si une nouvelle saisie arrive pendant une requête, celle-ci est **annulée** (`AbortController`).
 - Pendant le chargement, la liste affiche un **squelette**.
 
+### Favoris
+
+- Sur la page d'une localité, le bouton **« Ajouter aux favoris »** l'enregistre. Il devient alors **« Retirer des favoris »**.
+- Les favoris apparaissent sur l'accueil, dans **« Mes favoris »**, et s'ouvrent en un clic. Le lien **« Favoris »** de l'en-tête y mène depuis n'importe quelle page. Chaque favori a un bouton pour le retirer.
+- Ils sont conservés dans le navigateur (`localStorage`, clé `meteo-benin:favoris`) : ils survivent au rechargement et à la fermeture du navigateur, et restent synchronisés entre onglets.
+- **Une localité ne figure qu'une seule fois**, même ajoutée plusieurs fois. Le dédoublonnage par identifiant se fait à l'écriture comme à la lecture.
+- **Robustesse** : des données corrompues sont ignorées. Si le stockage est indisponible (navigation privée stricte, quota plein), les favoris restent utilisables pendant la session.
+- Pendant la lecture du stockage, un **squelette** s'affiche. Chaque ajout ou retrait est **annoncé** aux lecteurs d'écran.
+
+Code : [`src/lib/favorites-store.ts`](src/lib/favorites-store.ts) (stockage) et [`src/app/hooks/useFavorites.ts`](src/app/hooks/useFavorites.ts) (hook React, `useSyncExternalStore`).
+
 ### Erreurs (API injoignable ou en erreur)
 
 Une erreur de l'API ou du réseau n'affiche **jamais une page blanche ni un message technique**. L'utilisateur voit un message clair accompagné d'un bouton **« Réessayer »** (composant [`ErrorState`](src/components/ErrorState.tsx)).
@@ -221,4 +235,4 @@ Règles du projet :
 
 ## Stack
 
-Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · Tailwind CSS 4 · Leaflet / react-leaflet · Open-Meteo · OpenStreetMap
+Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · Tailwind CSS 4 · Leaflet · Open-Meteo · OpenStreetMap

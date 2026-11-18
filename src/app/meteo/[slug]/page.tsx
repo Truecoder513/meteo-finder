@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getForecastCached, getLocaliteCached } from "@/app/services/cached";
 import { CurrentWeather } from "@/components/CurrentWeather";
 import { DailyForecast } from "@/components/DailyForecast";
+import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { MapView } from "@/components/map/MapView";
 import { GRANDES_VILLES } from "@/lib/benin";
 import { idFromSlug, localiteSlug } from "@/lib/slug";
@@ -57,10 +58,24 @@ export default async function LocalitePage({ params }: PageProps<"/meteo/[slug]"
         </ol>
       </nav>
 
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Météo à {localite.name}</h1>
-      <p className="mt-1 text-muted">
-        {[localite.admin2, localite.admin1, "Bénin"].filter(Boolean).join(", ")}
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Météo à {localite.name}</h1>
+          <p className="mt-1 text-muted">
+            {[localite.admin2, localite.admin1, "Bénin"].filter(Boolean).join(", ")}
+          </p>
+        </div>
+        <FavoriteButton
+          localite={{
+            id: localite.id,
+            name: localite.name,
+            admin1: localite.admin1,
+            admin2: localite.admin2,
+            latitude: localite.latitude,
+            longitude: localite.longitude,
+          }}
+        />
+      </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[3fr_2fr]">
         <CurrentWeather current={forecast.current} />

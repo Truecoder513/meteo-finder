@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { StarIcon } from "./favorites/StarIcon";
 import { SearchBox } from "./SearchBox";
 
 export function Header({ withSearch = false }: { withSearch?: boolean }) {
   return (
     <header className="sticky top-0 z-[1100] border-b border-border bg-background">
-      <div className="mx-auto flex h-16 max-w-5xl items-center gap-6 px-4">
+      <div className="mx-auto flex h-16 max-w-5xl items-center gap-3 px-4 sm:gap-6">
         <Link
           href="/"
           aria-label="Météo Bénin — accueil"
@@ -16,6 +17,16 @@ export function Header({ withSearch = false }: { withSearch?: boolean }) {
           </svg>
           Météo Bénin
         </Link>
+        <nav aria-label="Principale" className={withSearch ? "" : "ml-auto"}>
+          <Link
+            href="/#favoris"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 text-sm text-muted hover:bg-subtle hover:text-foreground"
+          >
+            <StarIcon className="size-4" />
+            {/* Texte visible dès 640 px ; toujours lu par les lecteurs d'écran */}
+            <span className="sr-only sm:not-sr-only">Favoris</span>
+          </Link>
+        </nav>
         {withSearch && (
           <div className="ml-auto w-full max-w-xs">
             <SearchBox compact />
